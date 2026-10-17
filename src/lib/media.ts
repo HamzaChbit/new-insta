@@ -6,9 +6,32 @@ export class MediaError extends Error {constructor(public code:string,public sta
 export function parseInstagram(input:string){
  const parsed=z.string().trim().max(2048).url().safeParse(input);if(!parsed.success)throw new MediaError('INVALID_URL',400);
  const u=new URL(parsed.data);if(u.protocol!=='https:'||!['instagram.com','www.instagram.com'].includes(u.hostname)||u.port||u.username||u.password)throw new MediaError('INVALID_URL',400);
- const m=u.pathname.match(/^\/(reel|reels|p|tv)\/([A-Za-z0-9_-]{3,80})\/?$/);const story=u.pathname.match(/^\/stories\/([A-Za-z0-9_.]{1,30})\/(\d{5,30})\/?$/);
+ const m=u.pathname.match(/^\/(reel|reels|p|tv)\/([A-Za-z0-9_-]{3,80})\/?$/);const story=u.pathname.match(/^\/stories\/([A-Za-z0-9_.]{1,30})(?:\/(\d{5,30}))?\/?$/);
  if(!m&&!story)throw new MediaError('INVALID_URL',400);
  return {url:`https://www.instagram.com${u.pathname.replace(/\/$/,'')}/`,kind:(story?'story':m![1].startsWith('reel')?'reel':'post') as Kind};
+}
+// A collection is accepted only when its owner matches the requested profile.
+// It may be partial: no authenticated requests or pagination are performed.
+export function extractPublicStories(html:string,username:string){
+ const $=load(html);const collected=new Map<string,Media>();let visited=0;
+ const walk=(value:unknown,depth=0):void=>{
+  if(depth>60||++visited>60000)return;
+  if(typeof value==='string'&&/^\s*[\[{]/.test(value)&&value.length<2_000_000){try{walk(JSON.parse(value),depth+1)}catch{}return}
+  if(!value||typeof value!=='object')return;
+  const node=value as Record<string,unknown>;
+  const owner=node.user&&typeof node.user==='object'?(node.user as Record<string,unknown>).username:undefined;
+  if(typeof owner==='string'&&owner.toLowerCase()===username.toLowerCase()&&Array.isArray(node.items)){
+   for(const item of node.items.slice(0,50)){
+    if(!item||typeof item!=='object')continue;
+    const id=String(item.pk||item.id||'').split('_')[0];if(!/^\d{5,30}$/.test(id)||collected.has(id))continue;
+    try{const result=extractMedia('<script type="application/json">'+JSON.stringify(item).replace(/</g,'\\u003c')+'</script>',id,true);if(result.items[0])collected.set(id,result.items[0])}catch{}
+   }
+  }
+  for(const child of Object.values(node))walk(child,depth+1);
+ };
+ $('script[type="application/json"]').each((_,el)=>{try{walk(JSON.parse($(el).text()))}catch{}});
+ if(!collected.size)throw new MediaError('STORY_UNAVAILABLE');
+ return {title:'Stories · @'+username,items:[...collected.values()]};
 }
 export function allowedMedia(value:string){try{const u=new URL(value);return u.protocol==='https:'&&!u.port&&!u.username&&!u.password&&['cdninstagram.com','fbcdn.net'].some(d=>u.hostname.endsWith('.'+d))}catch{return false}}
 export function extractMedia(html:string,expectedCode?:string,isStory=false){

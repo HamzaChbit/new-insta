@@ -1,5 +1,13 @@
 # InstaVault
 
+## Persistent Paste button and public Story collections
+
+Paste remains visible beside a populated input on desktop and mobile. It replaces the current link and clears old results/errors. Clipboard denial shows a localized manual-paste message.
+
+`/stories/username/` URLs are now accepted. If public embedded JSON contains an owner-matched `user.username` plus an `items` collection, the resolver extracts up to 50 uniquely identified Story media items, with a separate signed download per returned file. An individual Story link can also expose such a collection; otherwise it falls back to its exact ID. Results explicitly warn that the list may be incomplete. No login, private endpoint, proxy rotation, or third-party API was added.
+
+The three-item collection workflow was verified with test-only fixtures. A fresh real request for `https://www.instagram.com/stories/oussamablmas/` returned HTTP 200 with no video URLs, so a successful live profile Story collection download remains unverified. This update does not solve that upstream availability limitation.
+
 ## Current scope: free Reels and video downloads
 
 The product focuses on free Instagram Reels and video downloads. Photo and carousel landing pages return 404 and are excluded from navigation, internal links, static routes and sitemap. Reels and post responses return videos; Story responses can return a photo or video from an exact matching Story media ID. English SEO targets "Download Instagram Reels Free", with localized French and Arabic content. Legacy content definitions remain in source but are not routed or indexed.
