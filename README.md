@@ -1,18 +1,8 @@
 # InstaVault
 
-## Persistent Paste button and public Story collections
+## Reels and videos only
 
-Paste remains visible beside a populated input on desktop and mobile. It replaces the current link and clears old results/errors. Clipboard denial shows a localized manual-paste message.
-
-`/stories/username/` URLs are now accepted. If public embedded JSON contains an owner-matched `user.username` plus an `items` collection, the resolver extracts up to 50 uniquely identified Story media items, with a separate signed download per returned file. An individual Story link can also expose such a collection; otherwise it falls back to its exact ID. Results explicitly warn that the list may be incomplete. No login, private endpoint, proxy rotation, or third-party API was added.
-
-The three-item collection workflow was verified with test-only fixtures. A fresh real request for `https://www.instagram.com/stories/oussamablmas/` returned HTTP 200 with no video URLs, so a successful live profile Story collection download remains unverified. This update does not solve that upstream availability limitation.
-
-## Current scope: free Reels and video downloads
-
-The product focuses on free Instagram Reels and video downloads. Photo and carousel landing pages return 404 and are excluded from navigation, internal links, static routes and sitemap. Reels and post responses return videos; Story responses can return a photo or video from an exact matching Story media ID. English SEO targets "Download Instagram Reels Free", with localized French and Arabic content. Legacy content definitions remain in source but are not routed or indexed.
-
-GitHub Actions runs unit tests, the production build, and desktop/mobile browser tests on Ubuntu on each push or pull request. Deployment still needs a real domain, signing secret, and operator contact configuration. There are eight content routes per language, plus each localized homepage.
+Stories have been removed from navigation, tabs, landing pages, sitemap and the resolver. Story links are rejected as invalid input before any upstream request. The public collection extractor was removed. Photo and carousel pages remain disabled. Paste stays visible on desktop and mobile.
 
 Next.js App Router + TypeScript + Tailwind v4, shadcn-style Radix Button, Lucide, Framer Motion, and Zod. English at `/`, French at `/fr`, Arabic with RTL at `/ar`. White-and-red theme by default, with an optional red-accented night theme. Homepage SEO targets free Instagram downloads naturally in English, French and Arabic, with free Offer structured data and contextual internal links. Includes 10 translated content routes per language, metadata, canonical/hreflang links, sitemap, robots, Open Graph image, JSON-LD, mobile navigation, theme switching, clipboard controls and accessible forms.
 
@@ -37,7 +27,7 @@ Set `DOWNLOAD_SECRET` to a random secret of at least 32 characters before produc
 
 At the user's request there is **no third-party API dependency**. `POST /api/media/resolve` accepts `{ "url": "https://www.instagram.com/reel/.../", "rights": true }`. It validates and normalizes the URL, fetches the public page once, and parses Open Graph tags, public HTML video sources, and public embedded JSON with Cheerio. Embedded Reel video_versions are accepted only from a media object whose code matches the requested Reel. It never logs in, replays cookies, accesses private endpoints, executes Instagram scripts, or bypasses restrictions. Reels require an actual video URL; covers are not presented as videos.
 
-**This cannot reliably download every public Instagram link.** Instagram often requires login, blocks automated page access, or omits video URLs. In these cases the real backend returns an explicit error. Stories are attempted through the same public-page reader. Missing Story files return STORY_UNAVAILABLE; no login or private endpoint is used. Carousels may expose only one image or incomplete metadata; the UI clearly says so. Images may be previews instead of full-resolution originals. Nothing is fabricated. The UI links to terms instead of requiring a checkbox. Users remain responsible for having permission to save content. Site operators must verify that direct automated public-page access is permitted for their use and deployment before enabling it.
+**This cannot reliably download every public Instagram link.** Instagram often requires login, blocks automated page access, or omits video URLs. In these cases the real backend returns an explicit error. Stories are not supported. Carousels may expose only one image or incomplete metadata; the UI clearly says so. Images may be previews instead of full-resolution originals. Nothing is fabricated. The UI links to terms instead of requiring a checkbox. Users remain responsible for having permission to save content. Site operators must verify that direct automated public-page access is permitted for their use and deployment before enabling it.
 
 `GET /api/media/download?token=...` verifies a ten-minute HMAC token, permits HTTPS Instagram/Meta CDN subdomains only, checks DNS for public unicast addresses, refuses redirects, enforces content types, and downloads at most 40 MB. Request timeouts are 12 seconds. Serverless execution and response-size limits may impose smaller limits; for large media use a separately reviewed streaming backend. DNS validation precedes fetch; production egress controls should also block private networks to mitigate DNS rebinding. No arbitrary remote URLs are accepted by the API.
 
@@ -76,9 +66,4 @@ Unit tests cover URL/host validation, metadata extraction, honest errors, signat
 
 There is no contact form pretending to deliver mail. A real mail link appears when the operator configures an email address. Generic unexpected-error and 404 screens are in English; normal pages, controls, FAQs and media errors are translated.
 
-## Public Stories and simplified form
-
-The form now sends only `{ "url": "..." }`; the old permission checkbox and required rights field were removed. A terms link remains. Story extraction matches the requested numeric media ID (pk or id) inside public embedded JSON. Profile pictures and unrelated Stories are never substituted. Only already-exposed CDN files can be downloaded.
-
-The supplied live Story `oussamablmas/4010143963499367584` returned a public title but no matching photo or video file during verification. Its API response is honestly `422 STORY_UNAVAILABLE`. A successful live Story download has **not** been verified; unit fixtures verify the supported public-data formats only. The Story page explains that availability is conditional.
 
