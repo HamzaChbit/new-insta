@@ -6,11 +6,13 @@ export async function POST(request:Request){try{
  limit(request);const origin=request.headers.get('origin');if(origin&&origin!==new URL(request.url).origin)throw new MediaError('INVALID_URL',403);
  if(Number(request.headers.get('content-length'))>4096)throw new MediaError('INVALID_URL',400);
  let input;try{input=JSON.parse((await readLimited(new Response(request.body),4096)).toString())}catch{throw new MediaError('INVALID_URL',400)}
- const body=z.object({url:z.string().max(2048),rights:z.literal(true)}).safeParse(input);if(!body.success)throw new MediaError('RIGHTS_REQUIRED',400);
- const parsed=parseInstagram(body.data.url);if(parsed.kind==='story')throw new MediaError('STORY_UNSUPPORTED');
+ const body=z.object({url:z.string().max(2048)}).safeParse(input);if(!body.success)throw new MediaError('INVALID_URL',400);
+ const parsed=parseInstagram(body.data.url);
  const response=await safeFetch(parsed.url,'page');if(!response.headers.get('content-type')?.includes('text/html'))throw new MediaError('UNAVAILABLE');
- const result=extractMedia((await readLimited(response,2_000_000)).toString(),new URL(parsed.url).pathname.split('/')[2]);
- result.items=result.items.filter(item=>item.type==='video');
+ const isStory=parsed.kind==='story';const parts=new URL(parsed.url).pathname.split('/');
+ const result=extractMedia((await readLimited(response,2_000_000)).toString(),parts[isStory?3:2],isStory);
+ if(!isStory)result.items=result.items.filter(item=>item.type==='video');
  if(!result.items.length)throw new MediaError('PUBLIC_MEDIA_MISSING');
  return Response.json({title:result.title,kind:parsed.kind,source:parsed.url,notice:'PUBLIC_METADATA_ONLY',items:result.items.map(item=>({type:item.type,quality:item.quality,download:'/api/media/download?token='+signDownload(item.url,item.type),preview:item.url}))},{headers:{'Cache-Control':'no-store'}});
  }catch(e){return apiError(e)}}
+
