@@ -67,4 +67,3 @@ Unit tests cover URL/host validation, metadata extraction, honest errors, signat
 - `tests`: unit and Playwright suites
 
 There is no contact form pretending to deliver mail. A real mail link appears when the operator configures an email address. Generic unexpected-error and 404 screens are in English; normal pages, controls, FAQs and media errors are translated.
-

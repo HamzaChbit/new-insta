@@ -1,0 +1,3 @@
+import {ImageResponse} from 'next/og';
+export const alt='InstaVault — Download Reels Free';export const size={width:1200,height:630};export const contentType='image/png';
+export default function Image(){return new ImageResponse(<div style={{background:'#fff',width:'100%',height:'100%',display:'flex',flexDirection:'column',justifyContent:'center',padding:90,color:'#241619'}}><div style={{fontSize:30,color:'#c82036',marginBottom:45}}>↓ instavault.</div><div style={{fontSize:68,lineHeight:1.15}}>Download Reels Free</div><div style={{fontSize:68,color:'#d4253e'}}>Instagram Reels & Videos.</div><div style={{fontSize:24,color:'#6c5e62',marginTop:35}}>Public Instagram media · No account · No external API</div></div>,size)}

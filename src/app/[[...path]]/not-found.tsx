@@ -1,0 +1,1 @@
+import Link from 'next/link';export default function NotFound(){return <main className="article"><p className="section-kicker">404 · INSTAVAULT</p><h1>This moment wandered off.</h1><p>The page you’re looking for doesn’t exist.</p><Link className="button gradient" href="/">Back to InstaVault</Link></main>}

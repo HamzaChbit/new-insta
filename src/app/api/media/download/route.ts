@@ -1,0 +1,4 @@
+import {apiError,limit,readLimited,safeFetch,verifyDownload} from '@/lib/server';
+import {MediaError} from '@/lib/media';
+export const runtime='nodejs';
+export async function GET(request:Request){try{limit(request);const data=verifyDownload(new URL(request.url).searchParams.get('token')||'');const response=await safeFetch(data.url,'media');const mime=response.headers.get('content-type')?.split(';')[0]||'';const types:Record<string,string>={'video/mp4':'mp4','image/jpeg':'jpg','image/png':'png','image/webp':'webp'};if(!types[mime]||!mime.startsWith(data.type+'/'))throw new MediaError('UNAVAILABLE');const bytes=await readLimited(response,40_000_000);return new Response(new Uint8Array(bytes),{headers:{'Content-Type':mime,'Content-Disposition':`attachment; filename="instavault.${types[mime]}"`,'Content-Length':String(bytes.length),'Cache-Control':'private, no-store'}})}catch(e){return apiError(e)}}
