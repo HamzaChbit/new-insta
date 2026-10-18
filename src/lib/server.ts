@@ -6,10 +6,10 @@ import {allowedMedia,MediaError} from './media';
 const runtimeState=globalThis as typeof globalThis&{__instavaultDevelopmentSecret?:string};
 const ephemeral=runtimeState.__instavaultDevelopmentSecret??=randomBytes(32).toString('hex');
 function secret(){if(process.env.NODE_ENV==='production'&&(!process.env.DOWNLOAD_SECRET||process.env.DOWNLOAD_SECRET.length<32))throw new MediaError('CONFIGURATION',503);return process.env.DOWNLOAD_SECRET||ephemeral}
-export async function safeFetch(url:string,mode:'page'|'media'){
+export async function safeFetch(url:string,mode:'page'|'media',range?:string){
  const u=new URL(url);if(mode==='page'?u.hostname!=='www.instagram.com':!allowedMedia(url))throw new MediaError('UNAVAILABLE');
  const addresses=await lookup(u.hostname,{all:true});if(!addresses.length||addresses.some(a=>ipaddr.process(a.address).range()!=='unicast'))throw new MediaError('UNAVAILABLE');
- const response=await fetch(url,{redirect:'manual',signal:AbortSignal.timeout(12000),cache:'no-store',headers:{'User-Agent':'InstaVault/1.0 (public metadata reader)','Accept':mode==='page'?'text/html':'image/*,video/*'}});
+ const response=await fetch(url,{redirect:'manual',signal:AbortSignal.timeout(mode==='page'?12000:30000),cache:'no-store',headers:{'User-Agent':'InstaVault/1.0 (public metadata reader)','Accept':mode==='page'?'text/html':'image/*,video/*',...(mode==='media'&&range?{'Range':range}:{})}});
  if(!response.ok)throw new MediaError(response.status===429?'UPSTREAM_LIMIT':'UNAVAILABLE',422);
  return response;
 }
@@ -20,3 +20,4 @@ export function verifyDownload(token:string){if(token.length>12000)throw new Med
 const buckets=new Map<string,{count:number;reset:number}>();
 export function limit(request:Request){const now=Date.now();for(const [k,v]of buckets)if(v.reset<now)buckets.delete(k);const ip=process.env.VERCEL?request.headers.get('x-vercel-forwarded-for')||'shared':'local';const key=createHmac('sha256',ephemeral).update(ip).digest('hex');const b=buckets.get(key)||{count:0,reset:now+60000};if(++b.count>12||buckets.size>10000)throw new MediaError('RATE_LIMIT',429);buckets.set(key,b)}
 export function apiError(error:unknown){const e=error instanceof MediaError?error:new MediaError('UNAVAILABLE',502);return Response.json({error:e.code},{status:e.status,headers:{'Cache-Control':'no-store',...(e.status===429?{'Retry-After':'60'}:{})}})}
+

@@ -1,5 +1,15 @@
 # InstaVault
 
+## Tool pages and downloads
+
+The Reels/Video selector now navigates to separate localized landing pages, each with its own H1, description, instructions, canonical URL and selected tool link. These tool links use full document navigation to avoid stale metadata from the dynamic root route during client transitions.
+
+Results remain inside the tool page with its informational content. The Download button fetches the file, saves it via a browser download, and shows any expired-link or network error inside the result instead of navigating to a JSON response. Video previews use the signed same-origin proxy; failed previews show a visible fallback. The download endpoint streams approved CDN media, accepts one byte range for video playback, preserves inline/attachment disposition, and enforces the 40 MB ceiling. Page requests time out after 12 seconds; media transfers after 30 seconds.
+
+Live verification after this update: the Reel DdwnPyYu6IZ resolved and downloaded as a 3,059,368-byte MP4. A preview request for bytes 0–1023 returned HTTP 206, the correct Content-Range and an MP4 ftyp header. Browser tests separately verify successful file saving, error display without navigation, and independent Reels/Video page metadata. Three-MB live media was verified; larger Vercel transfers still require deployment testing.
+
+The user-supplied Story link was tested through VideoDropper's public UI and did produce a download link there. This proves that service returned a result, not that its upstream extraction method or a licensed integration is available to this application. No undocumented third-party downloader endpoint was added, and Stories remain disabled in this project.
+
 ## Reels and videos only
 
 Stories have been removed from navigation, tabs, landing pages, sitemap and the resolver. Story links are rejected as invalid input before any upstream request. The public collection extractor was removed. Photo and carousel pages remain disabled. Paste stays visible on desktop and mobile.
